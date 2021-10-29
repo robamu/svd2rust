@@ -165,11 +165,22 @@ fn run() -> Result<()> {
     };
 
     info!("Parsing device from SVD file..");
-    let device = svd_parser::parse_with_config(xml, &parser_config)?;
+    let device = match svd_parser::parse_with_config(xml, &parser_config) {
+        Ok(device) => device,
+        Err(e) => {
+            panic!("Error parsing SVD file: {}", e);
+        }
+    };
 
     let mut device_x = String::new();
     info!("Rendering devices..");
-    let items = generate::device::render(&device, &config, &mut device_x)?;
+    let items = match generate::device::render(&device, &config, &mut device_x) {
+        Ok(items) => items,
+        Err(e) => {
+            panic!("Error rendering devices: {}", e);
+        }
+    };
+
     let filename = if make_mod { "mod.rs" } else { "lib.rs" };
     let mut file = File::create(path.join(filename)).expect("Couldn't create output file");
 

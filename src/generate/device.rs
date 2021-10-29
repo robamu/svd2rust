@@ -1,8 +1,10 @@
 use crate::svd::Device;
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::{quote, ToTokens};
+
 use std::fs::File;
 use std::io::Write;
+use log::error;
 
 use crate::util::{self, Config, ToSanitizedUpperCase};
 use crate::Target;
@@ -191,12 +193,27 @@ pub fn render(d: &Device, config: &Config, device_x: &mut String) -> Result<Toke
             continue;
         }
 
-        out.extend(peripheral::render(
+        let rendered_peripheral = match peripheral::render(
             p,
             &d.peripherals,
             &d.default_register_properties,
-            config,
-        )?);
+            config) 
+        {
+            Ok(rend_periph) => rend_periph,
+            Err(e) => {
+                let descrip = p.description.as_deref().unwrap_or("No description");
+                let group_name = p.group_name.as_deref().unwrap_or("No group name");
+                error!("Rendering error at peripheral {}", p.name);
+                eprintln!("\tDescription: \"{}\"", descrip);
+                eprintln!("\tGroup name: {}", group_name);
+                eprintln!("\tBase address: {:#10x}", p.base_address);
+                if p.derived_from.is_some() {
+                    eprintln!("\tDerived from: {}", p.derived_from.as_deref().unwrap());
+                }
+                return Err(e)
+            }
+        };
+        out.extend(rendered_peripheral);
 
         if p.registers
             .as_ref()
