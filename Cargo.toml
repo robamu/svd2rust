@@ -47,6 +47,7 @@ anyhow = "1.0"
 thiserror = "1.0"
 
 [dependencies.svd-parser]
+path = '../svd-rs/svd-parser'
 features = ["derive-from"]
 version = "0.11"
 
