@@ -1084,5 +1084,12 @@ fn name_to_wrapped_ty_str(name: &str, ns: Option<&str>) -> String {
 
 fn name_to_wrapped_ty(name: &str, ns: Option<&str>) -> Result<syn::Type, syn::Error> {
     let ident = name_to_wrapped_ty_str(name, ns);
-    Ok(syn::Type::Path(parse_str::<syn::TypePath>(&ident)?))
+    let parsed_path = match parse_str::<syn::TypePath>(&ident) {
+        Ok(path) => path,
+        Err(e) => {
+            error!("Determining syn::TypePath from ident \"{}\" failed", ident);
+            return Err(e)
+        }
+    };
+    Ok(syn::Type::Path(parsed_path))
 }
