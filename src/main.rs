@@ -1,6 +1,6 @@
 #![recursion_limit = "128"]
 
-use log::error;
+use log::{info, error};
 use std::path::PathBuf;
 use svd_parser::svd;
 
@@ -164,9 +164,11 @@ fn run() -> Result<()> {
         svd::ValidateLevel::Weak
     };
 
+    info!("Parsing device from SVD file..");
     let device = svd_parser::parse_with_config(xml, &parser_config)?;
 
     let mut device_x = String::new();
+    info!("Rendering devices..");
     let items = generate::device::render(&device, &config, &mut device_x)?;
     let filename = if make_mod { "mod.rs" } else { "lib.rs" };
     let mut file = File::create(path.join(filename)).expect("Couldn't create output file");
