@@ -4,6 +4,7 @@ use crate::svd::{Access, Cluster, Register, RegisterCluster, RegisterInfo};
 use inflections::Inflect;
 use proc_macro2::{Ident, Literal, Span, TokenStream};
 use quote::{quote, ToTokens};
+use log::error;
 use std::path::PathBuf;
 
 use anyhow::{anyhow, bail, Result};
@@ -368,6 +369,25 @@ pub fn build_rs() -> TokenStream {
             println!("cargo:rerun-if-changed=build.rs");
         }
     }
+}
+
+pub fn handle_reg_error(msg: &str, reg: &Register) {
+    let reg_name = &reg.name;
+    let descrip = reg.description.as_deref().unwrap_or("No description");
+    handle_erc_error(msg, reg_name, descrip);
+}
+
+pub fn handle_cluster_error(msg: &str, cluster: &Cluster) {
+    let cluster_name = &cluster.name;
+    let descrip = cluster.description.as_deref().unwrap_or("No description");
+    handle_erc_error(msg, cluster_name, descrip);
+
+}
+
+fn handle_erc_error(msg: &str, name: &String, descrip: &str) {
+    error!("{}", msg);
+    eprintln!("\tName: {}", name);
+    eprintln!("\tDescription: {}", descrip);
 }
 
 pub trait FullName {
