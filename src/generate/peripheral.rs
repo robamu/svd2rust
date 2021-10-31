@@ -204,6 +204,7 @@ pub fn render(
         )?);
     }
 
+    debug!("{}", mod_items);
     let description =
         util::escape_brackets(util::respace(p.description.as_ref().unwrap_or(&p.name)).as_ref());
 
