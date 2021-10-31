@@ -197,8 +197,8 @@ pub fn render(d: &Device, config: &Config, device_x: &mut String) -> Result<Toke
             p,
             &d.peripherals,
             &d.default_register_properties,
-            config) 
-        {
+            config
+        ) {
             Ok(rend_periph) => rend_periph,
             Err(e) => {
                 let descrip = p.description.as_deref().unwrap_or("No description");

@@ -4,15 +4,17 @@ use std::collections::HashMap;
 
 use crate::svd::{
     Cluster, ClusterInfo, DeriveFrom, DimElement, Peripheral, Register, RegisterCluster,
-    RegisterProperties,
+    RegisterProperties
 };
-use log::{warn, error, debug};
+use log::{warn, error};
 use proc_macro2::{Ident, Punct, Spacing, Span, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{parse_str, Token};
 
+
 use crate::util::{
     self, Config, FullName, ToSanitizedSnakeCase, ToSanitizedUpperCase, BITS_PER_BYTE,
+    handle_cluster_error, handle_reg_error
 };
 use anyhow::{anyhow, bail, Context, Result};
 
@@ -196,15 +198,21 @@ pub fn render(
 
     // Push all register related information into the peripheral module
     for reg in registers {
-        debug!("Pushing register {} into outout", reg.name);
-        mod_items.extend(register::render(
+        let rendered_reg = match register::render(
             reg,
             registers,
             p,
             all_peripherals,
             &defaults,
-            config,
-        )?);
+            config
+        ) {
+            Ok(rendered_reg) => rendered_reg,
+            Err(e) => {
+                handle_reg_error("Error rendering regular register", *reg);
+                return Err(e)
+            }
+        };
+        mod_items.extend(rendered_reg);
     }
 
     let description =
@@ -610,10 +618,7 @@ fn expand(
                 match expand_register(register, defs, name, config) {
                     Ok(expanded_reg) => expanded_reg,
                     Err(e) => {
-                        let reg_name = &register.name;
-                        let descrip = register.description.as_deref().unwrap_or("No description");
-                        error!("Error expanding register {}", reg_name);
-                        eprintln!("\tDescription: {}", descrip);
+                        handle_reg_error("Error expanding register", register);
                         return Err(e)
                     }
                 }
@@ -622,10 +627,7 @@ fn expand(
                 match expand_cluster(cluster, defs, name, config) {
                     Ok(expanded_cluster) => expanded_cluster,
                     Err(e) => {
-                        let cluster_name = &cluster.name;
-                        let descrip = cluster.description.as_deref().unwrap_or("No description");
-                        error!("Error expanding register cluster {}", cluster_name);
-                        eprintln!("\tDescription: {}", descrip);
+                        handle_cluster_error("Error expanding register cluster", cluster);
                         return Err(e)
                     }
                 }
@@ -858,14 +860,24 @@ fn cluster_block(
     // Generate definition for each of the registers.
     let registers = util::only_registers(&c.children);
     for reg in &registers {
-        mod_items.extend(register::render(
+        let rendered_reg = match register::render(
             reg,
             &registers,
             p,
             all_peripherals,
             &defaults,
             config,
-        )?);
+        ) {
+            Ok(rendered_reg) => rendered_reg,
+            Err(e) => {
+                handle_reg_error(
+                    "Error generating register definition for a register cluster",
+                    *reg
+                );
+                return Err(e);
+            }
+        };
+        mod_items.extend(rendered_reg);
     }
 
     // Generate the sub-cluster blocks.
