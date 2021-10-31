@@ -12,7 +12,8 @@ use quote::{quote, ToTokens};
 use syn::{parse_str, Token};
 
 use crate::util::{
-    self, Config, FullName, ToSanitizedSnakeCase, ToSanitizedUpperCase, BITS_PER_BYTE,
+    self, handle_cluster_error, handle_reg_error, Config, FullName, ToSanitizedSnakeCase,
+    ToSanitizedUpperCase, BITS_PER_BYTE,
 };
 use anyhow::{anyhow, bail, Context, Result};
 
@@ -194,14 +195,15 @@ pub fn render(
 
     // Push all register related information into the peripheral module
     for reg in registers {
-        mod_items.extend(register::render(
-            reg,
-            registers,
-            p,
-            all_peripherals,
-            &defaults,
-            config,
-        )?);
+        mod_items.extend(
+            match register::render(reg, registers, p, all_peripherals, &defaults, config) {
+                Ok(rendered_reg) => rendered_reg,
+                Err(e) => {
+                    let res: Result<TokenStream> = Err(e);
+                    return handle_reg_error("Error redering regular register", *reg, res);
+                }
+            },
+        );
     }
 
     let description =
@@ -454,7 +456,8 @@ fn register_or_cluster_block(
     let mut accessors = TokenStream::new();
     let mut have_accessors = false;
 
-    let ercs_expanded = expand(ercs, defs, name, config)?;
+    let ercs_expanded = expand(ercs, defs, name, config)
+        .with_context(|| "Issue expanding register or cluster block")?;
 
     // Locate conflicting regions; we'll need to use unions to represent them.
     let mut regions = FieldRegions::default();
@@ -597,8 +600,28 @@ fn expand(
 
     for erc in ercs {
         ercs_expanded.extend(match &erc {
-            RegisterCluster::Register(register) => expand_register(register, defs, name, config)?,
-            RegisterCluster::Cluster(cluster) => expand_cluster(cluster, defs, name, config)?,
+            RegisterCluster::Register(register) => {
+                match expand_register(register, defs, name, config) {
+                    Ok(expanded_reg) => expanded_reg,
+                    Err(e) => {
+                        let res = Err(e);
+                        return handle_reg_error("Error expanding register", register, res);
+                    }
+                }
+            }
+            RegisterCluster::Cluster(cluster) => {
+                match expand_cluster(cluster, defs, name, config) {
+                    Ok(expanded_cluster) => expanded_cluster,
+                    Err(e) => {
+                        let res = Err(e);
+                        return handle_cluster_error(
+                            "Error expanding register cluster",
+                            cluster,
+                            res,
+                        );
+                    }
+                }
+            }
         });
     }
 
@@ -740,7 +763,8 @@ fn expand_register(
 
     match register {
         Register::Single(info) => register_expanded.push(RegisterBlockField {
-            field: convert_svd_register(register, name, config.ignore_groups)?,
+            field: convert_svd_register(register, name, config.ignore_groups)
+                .with_context(|| "syn error occured")?,
             description: info.description.clone().unwrap_or_default(),
             offset: info.address_offset,
             size: register_size,
@@ -815,14 +839,19 @@ fn cluster_block(
     // Generate definition for each of the registers.
     let registers = util::only_registers(&c.children);
     for reg in &registers {
-        mod_items.extend(register::render(
-            reg,
-            &registers,
-            p,
-            all_peripherals,
-            &defaults,
-            config,
-        )?);
+        mod_items.extend(
+            match register::render(reg, &registers, p, all_peripherals, &defaults, config) {
+                Ok(rendered_reg) => rendered_reg,
+                Err(e) => {
+                    let res: Result<TokenStream> = Err(e);
+                    return handle_reg_error(
+                        "Error generating register definition for a register cluster",
+                        *reg,
+                        res,
+                    );
+                }
+            },
+        );
     }
 
     // Generate the sub-cluster blocks.
@@ -848,7 +877,7 @@ fn expand_svd_register(
     register: &Register,
     name: Option<&str>,
     ignore_group: bool,
-) -> Result<Vec<syn::Field>, syn::Error> {
+) -> Result<Vec<syn::Field>> {
     let mut out = vec![];
 
     match register {
@@ -885,13 +914,14 @@ fn convert_svd_register(
     register: &Register,
     name: Option<&str>,
     ignore_group: bool,
-) -> Result<syn::Field, syn::Error> {
+) -> Result<syn::Field> {
     Ok(match register {
         Register::Single(info) => {
             let info_name = info.fullname(ignore_group);
             new_syn_field(
                 &info_name.to_sanitized_snake_case(),
-                name_to_wrapped_ty(&info_name, name)?,
+                name_to_wrapped_ty(&info_name, name)
+                    .with_context(|| format!("Error converting info name {}", info_name))?,
             )
         }
         Register::Array(info, array_info) => {
@@ -1038,7 +1068,16 @@ fn name_to_wrapped_ty_str(name: &str, ns: Option<&str>) -> String {
     }
 }
 
-fn name_to_wrapped_ty(name: &str, ns: Option<&str>) -> Result<syn::Type, syn::Error> {
+fn name_to_wrapped_ty(name: &str, ns: Option<&str>) -> Result<syn::Type> {
     let ident = name_to_wrapped_ty_str(name, ns);
-    Ok(syn::Type::Path(parse_str::<syn::TypePath>(&ident)?))
+    match parse_str::<syn::TypePath>(&ident) {
+        Ok(path) => Ok(syn::Type::Path(path)),
+        Err(e) => {
+            let mut res = Err(e.into());
+            res = res.with_context(|| {
+                format!("Determining syn::TypePath from ident \"{}\" failed", ident)
+            });
+            res
+        }
+    }
 }
