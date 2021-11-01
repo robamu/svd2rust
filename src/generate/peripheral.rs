@@ -195,15 +195,13 @@ pub fn render(
 
     // Push all register related information into the peripheral module
     for reg in registers {
-        mod_items.extend(
-            match register::render(reg, registers, p, all_peripherals, &defaults, config) {
-                Ok(rendered_reg) => rendered_reg,
-                Err(e) => {
-                    let res: Result<TokenStream> = Err(e);
-                    return handle_reg_error("Error rendering register", *reg, res);
-                }
-            },
-        );
+        match register::render(reg, registers, p, all_peripherals, &defaults, config) {
+            Ok(rendered_reg) => mod_items.extend(rendered_reg),
+            Err(e) => {
+                let res: Result<TokenStream> = Err(e);
+                return handle_reg_error("Error rendering register", *reg, res);
+            }
+        };
     }
 
     let description =
@@ -599,10 +597,10 @@ fn expand(
     let mut ercs_expanded = vec![];
 
     for erc in ercs {
-        ercs_expanded.extend(match &erc {
+        match &erc {
             RegisterCluster::Register(register) => {
                 match expand_register(register, defs, name, config) {
-                    Ok(expanded_reg) => expanded_reg,
+                    Ok(expanded_reg) => ercs_expanded.extend(expanded_reg),
                     Err(e) => {
                         let res = Err(e);
                         return handle_reg_error("Error expanding register", register, res);
@@ -611,7 +609,7 @@ fn expand(
             }
             RegisterCluster::Cluster(cluster) => {
                 match expand_cluster(cluster, defs, name, config) {
-                    Ok(expanded_cluster) => expanded_cluster,
+                    Ok(expanded_cluster) => ercs_expanded.extend(expanded_cluster),
                     Err(e) => {
                         let res = Err(e);
                         return handle_cluster_error(
@@ -622,7 +620,7 @@ fn expand(
                     }
                 }
             }
-        });
+        };
     }
 
     ercs_expanded.sort_by_key(|x| x.offset);
