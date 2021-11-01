@@ -200,7 +200,7 @@ pub fn render(
                 Ok(rendered_reg) => rendered_reg,
                 Err(e) => {
                     let res: Result<TokenStream> = Err(e);
-                    return handle_reg_error("Error redering regular register", *reg, res);
+                    return handle_reg_error("Error rendering register", *reg, res);
                 }
             },
         );
@@ -457,7 +457,7 @@ fn register_or_cluster_block(
     let mut have_accessors = false;
 
     let ercs_expanded = expand(ercs, defs, name, config)
-        .with_context(|| "Issue expanding register or cluster block")?;
+        .with_context(|| "Could not expand register or cluster block")?;
 
     // Locate conflicting regions; we'll need to use unions to represent them.
     let mut regions = FieldRegions::default();
