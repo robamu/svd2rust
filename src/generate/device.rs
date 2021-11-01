@@ -185,6 +185,7 @@ pub fn render(d: &Device, config: &Config, device_x: &mut String) -> Result<Toke
         });
     }
 
+    debug!("Rendering interrupts");
     out.extend(interrupt::render(config.target, &d.peripherals, device_x)?);
 
     for p in &d.peripherals {
