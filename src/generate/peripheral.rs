@@ -6,7 +6,7 @@ use crate::svd::{
     Cluster, ClusterInfo, DeriveFrom, DimElement, Peripheral, Register, RegisterCluster,
     RegisterProperties,
 };
-use log::{debug, warn};
+use log::{debug, warn, trace};
 use proc_macro2::{Ident, Punct, Spacing, Span, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{parse_str, Token};
@@ -185,16 +185,6 @@ pub fn render(
     let defaults = p.default_register_properties.derive_from(defaults);
 
     // Push any register or cluster blocks into the output
-    for erc in &ercs {
-        match erc {
-            RegisterCluster::Cluster(c) => {
-                debug!("Found register cluster {}", c.name);
-            }
-            RegisterCluster::Register(r) => {
-                debug!("Found register {}", r.name);
-            }
-        }
-    }
     debug!(
         "Pushing {} register or cluster blocks into output",
         ercs.len()
@@ -202,17 +192,17 @@ pub fn render(
     let mut mod_items = TokenStream::new();
     mod_items.extend(register_or_cluster_block(&ercs, &defaults, None, config)?);
 
+    debug!("Pushing cluster information into output");
     // Push all cluster related information into the peripheral module
     for c in &clusters {
-        debug!(
-            "Pushing cluster information for cluster {} into output",
-            c.name
-        );
+        trace!("Cluster: {}", c.name);
         mod_items.extend(cluster_block(c, &defaults, p, all_peripherals, config)?);
     }
 
+    debug!("Pushing register information into output");
     // Push all register related information into the peripheral module
     for reg in registers {
+        trace!("Register: {}", reg.name);
         match register::render(reg, registers, p, all_peripherals, &defaults, config) {
             Ok(rendered_reg) => mod_items.extend(rendered_reg),
             Err(e) => {
@@ -614,11 +604,15 @@ fn expand(
 ) -> Result<Vec<RegisterBlockField>> {
     let mut ercs_expanded = vec![];
 
+    debug!("Expanding registers or clusters into Register Block Fields");
     for erc in ercs {
         match &erc {
             RegisterCluster::Register(register) => {
                 match expand_register(register, defs, name, config) {
-                    Ok(expanded_reg) => ercs_expanded.extend(expanded_reg),
+                    Ok(expanded_reg) => {
+                        trace!("Register: {}", register.name);
+                        ercs_expanded.extend(expanded_reg);
+                    }
                     Err(e) => {
                         let res = Err(e);
                         return handle_reg_error("Error expanding register", register, res);
@@ -627,7 +621,10 @@ fn expand(
             }
             RegisterCluster::Cluster(cluster) => {
                 match expand_cluster(cluster, defs, name, config) {
-                    Ok(expanded_cluster) => ercs_expanded.extend(expanded_cluster),
+                    Ok(expanded_cluster) => {
+                        trace!("Cluster: {}", cluster.name);
+                        ercs_expanded.extend(expanded_cluster);
+                    }
                     Err(e) => {
                         let res = Err(e);
                         return handle_cluster_error(
