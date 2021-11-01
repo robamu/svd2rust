@@ -194,30 +194,27 @@ pub fn render(d: &Device, config: &Config, device_x: &mut String) -> Result<Toke
         }
 
         debug!("Rendering peripheral {}", p.name);
-
-        out.extend(
-            match peripheral::render(p, &d.peripherals, &d.default_register_properties, config) {
-                Ok(periph) => periph,
-                Err(e) => {
-                    let descrip = p.description.as_deref().unwrap_or("No description");
-                    let group_name = p.group_name.as_deref().unwrap_or("No group name");
-                    let mut context_string = format!(
-                        "Rendering error at peripheral\nName: {}\nDescription: {}\nGroup: {}",
-                        p.name, descrip, group_name
+        match peripheral::render(p, &d.peripherals, &d.default_register_properties, config) {
+            Ok(periph) => out.extend(periph),
+            Err(e) => {
+                let descrip = p.description.as_deref().unwrap_or("No description");
+                let group_name = p.group_name.as_deref().unwrap_or("No group name");
+                let mut context_string = format!(
+                    "Rendering error at peripheral\nName: {}\nDescription: {}\nGroup: {}",
+                    p.name, descrip, group_name
+                );
+                if p.derived_from.is_some() {
+                    context_string = format!(
+                        "{}\nDerived from: {}",
+                        context_string,
+                        p.derived_from.as_deref().unwrap()
                     );
-                    if p.derived_from.is_some() {
-                        context_string = format!(
-                            "{}\nDerived from: {}",
-                            context_string,
-                            p.derived_from.as_deref().unwrap()
-                        );
-                    }
-                    let mut e = Err(e);
-                    e = e.with_context(|| context_string);
-                    return e;
                 }
-            },
-        );
+                let mut e = Err(e);
+                e = e.with_context(|| context_string);
+                return e;
+            }
+        };
 
         if p.registers
             .as_ref()
