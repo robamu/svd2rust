@@ -2,6 +2,7 @@ use crate::svd::Device;
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::{quote, ToTokens};
 
+use log::debug;
 use std::fs::File;
 use std::io::Write;
 
@@ -191,6 +192,8 @@ pub fn render(d: &Device, config: &Config, device_x: &mut String) -> Result<Toke
             // Core peripherals are handled above
             continue;
         }
+
+        debug!("Rendering peripheral {}", p.name);
 
         out.extend(
             match peripheral::render(p, &d.peripherals, &d.default_register_properties, config) {

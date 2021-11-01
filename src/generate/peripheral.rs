@@ -4,13 +4,12 @@ use std::collections::HashMap;
 
 use crate::svd::{
     Cluster, ClusterInfo, DeriveFrom, DimElement, Peripheral, Register, RegisterCluster,
-    RegisterProperties
+    RegisterProperties,
 };
-use log::{warn, debug};
+use log::{debug, warn};
 use proc_macro2::{Ident, Punct, Spacing, Span, TokenStream};
 use quote::{quote, ToTokens};
 use syn::{parse_str, Token};
-
 
 use crate::util::{
     self, handle_cluster_error, handle_reg_error, Config, FullName, ToSanitizedSnakeCase,
@@ -186,18 +185,35 @@ pub fn render(
     let defaults = p.default_register_properties.derive_from(defaults);
 
     // Push any register or cluster blocks into the output
-    debug!("Pushing {} register or cluster blocks into outout", ercs.len());
+    for erc in &ercs {
+        match erc {
+            RegisterCluster::Cluster(c) => {
+                debug!("Found register cluster {}", c.name);
+            }
+            RegisterCluster::Register(r) => {
+                debug!("Found register {}", r.name);
+            }
+        }
+    }
+    debug!(
+        "Pushing {} register or cluster blocks into output",
+        ercs.len()
+    );
     let mut mod_items = TokenStream::new();
     mod_items.extend(register_or_cluster_block(&ercs, &defaults, None, config)?);
 
     // Push all cluster related information into the peripheral module
     for c in &clusters {
-        debug!("Pushing cluster {} into output", c.name);
+        debug!(
+            "Pushing cluster information for cluster {} into output",
+            c.name
+        );
         mod_items.extend(cluster_block(c, &defaults, p, all_peripherals, config)?);
     }
 
     // Push all register related information into the peripheral module
     for reg in registers {
+        debug!("Pushing register information for register {}", reg.name);
         mod_items.extend(
             match register::render(reg, registers, p, all_peripherals, &defaults, config) {
                 Ok(rendered_reg) => rendered_reg,
