@@ -835,19 +835,17 @@ fn cluster_block(
     // Generate definition for each of the registers.
     let registers = util::only_registers(&c.children);
     for reg in &registers {
-        mod_items.extend(
-            match register::render(reg, &registers, p, all_peripherals, &defaults, config) {
-                Ok(rendered_reg) => rendered_reg,
-                Err(e) => {
-                    let res: Result<TokenStream> = Err(e);
-                    return handle_reg_error(
-                        "Error generating register definition for a register cluster",
-                        *reg,
-                        res,
-                    );
-                }
-            },
-        );
+        match register::render(reg, &registers, p, all_peripherals, &defaults, config) {
+            Ok(rendered_reg) => mod_items.extend(rendered_reg),
+            Err(e) => {
+                let res: Result<TokenStream> = Err(e);
+                return handle_reg_error(
+                    "Error generating register definition for a register cluster",
+                    *reg,
+                    res,
+                );
+            }
+        };
     }
 
     // Generate the sub-cluster blocks.
