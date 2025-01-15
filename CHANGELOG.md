@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Some fixes for the `svd2rust-regress` tool and update of its documentation
 - Other internal clippy fixes for `clippy::manual_div_ceil`, `clippy::nonminimal_bool` and
   `clippy::needless_lifetimes`
+- Added `#![cfg_attr(docsrs, feature(doc_auto_cfg))]` to the generated library code. This
+  adds a display of the feature gates in the documentation of the generated library
 
 ## [v0.35.0] - 2024-11-12
 
