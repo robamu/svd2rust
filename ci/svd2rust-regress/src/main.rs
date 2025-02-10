@@ -60,14 +60,15 @@ pub struct TestAll {
     #[clap(short = 'c', long)]
     pub chip: Vec<String>,
 
-    /// Filter by manufacturer, may be combined with other filters
+    /// Filter by group, which may be a manufacturer or a device family provided by a manufacturer.
+    /// May be combined with other filters
     #[clap(
-        short = 'm',
-        long = "manufacturer",
+        short = 'g',
+        long = "group",
         ignore_case = true,
-        value_parser = manufacturers(),
+        value_parser = groups(),
     )]
-    pub mfgr: Option<String>,
+    pub group: Option<String>,
 
     /// Filter by architecture, may be combined with other filters
     #[clap(
@@ -121,7 +122,7 @@ pub struct Test {
         short = 'm',
         long = "manufacturer",
         ignore_case = true,
-        value_parser = manufacturers(),
+        value_parser = groups(),
     )]
     /// Manufacturer
     pub mfgr: Option<String>,
@@ -166,7 +167,7 @@ impl Test {
         let test = if let (Some(url), Some(arch)) = (&self.url, &self.arch) {
             tests::TestCase {
                 arch: svd2rust::Target::parse(arch)?,
-                mfgr: tests::Manufacturer::Unknown,
+                group: tests::Group::Unknown,
                 chip: self
                     .chip
                     .as_deref()
@@ -213,9 +214,9 @@ impl TestAll {
             })
             // selected manufacturer?
             .filter(|t| {
-                if let Some(ref mfgr) = self.mfgr {
-                    mfgr.to_ascii_lowercase()
-                        .eq_ignore_ascii_case(&t.mfgr.to_string().to_ascii_lowercase())
+                if let Some(ref group) = self.group {
+                    group.to_ascii_lowercase()
+                        .eq_ignore_ascii_case(&t.group.to_string().to_ascii_lowercase())
                 } else {
                     true
                 }
@@ -402,8 +403,8 @@ fn architectures() -> Vec<clap::builder::PossibleValue> {
         .collect()
 }
 
-fn manufacturers() -> Vec<clap::builder::PossibleValue> {
-    tests::Manufacturer::all()
+fn groups() -> Vec<clap::builder::PossibleValue> {
+    tests::Group::all()
         .iter()
         .map(|mfgr| clap::builder::PossibleValue::new(mfgr.to_string()))
         .collect()

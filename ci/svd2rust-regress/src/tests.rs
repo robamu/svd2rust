@@ -1,13 +1,65 @@
+use std::collections::HashSet;
+
 use self::RunWhen::*;
 use anyhow::Context;
 use serde::Serialize as _;
+use strum::IntoEnumIterator;
 pub use svd2rust::Target;
 
 #[allow(clippy::upper_case_acronyms)]
 #[derive(
-    Debug, serde::Serialize, serde::Deserialize, PartialOrd, Ord, PartialEq, Eq, Clone, Copy,
+    Debug,
+    serde::Serialize,
+    serde::Deserialize,
+    PartialOrd,
+    Ord,
+    PartialEq,
+    Hash,
+    Eq,
+    Clone,
+    Copy,
+    strum_macros::EnumIter,
 )]
-pub enum Manufacturer {
+pub enum Group {
+    Atmel,
+    Freescale,
+    Fujitsu,
+    FujitsuMB9AF1,
+    FujitsuMB9AF3,
+    FujitsuMB9AF4,
+    FujitsuMB9AFA,
+    FujitsuMB9AFB,
+    FujitsuMB9B,
+    FujitsuMB9BF1,
+    FujitsuMB9BF2,
+    FujitsuMB9BF3,
+    FujitsuMB9BF4,
+    FujitsuMB9BF5,
+    FujitsuMB9BF6,
+    FujitsuMB9BFD,
+    Holtek,
+    Microchip,
+    Nordic,
+    Nuvoton,
+    NXP,
+    SiliconLabs,
+    Spansion,
+    STMicroF0,
+    STMicroF1,
+    STMicroF2,
+    STMicroF3,
+    STMicroF4,
+    STMicro,
+    Toshiba,
+    SiFive,
+    TexasInstruments,
+    Espressif,
+    Unknown,
+}
+
+#[allow(clippy::upper_case_acronyms)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq, Eq, Clone, Copy)]
+pub enum NameInCmsisSvdRepo {
     Atmel,
     Freescale,
     Fujitsu,
@@ -26,30 +78,55 @@ pub enum Manufacturer {
     Unknown,
 }
 
-impl Manufacturer {
-    pub const fn all() -> &'static [Self] {
-        use self::Manufacturer::*;
-        &[
-            Atmel,
-            Freescale,
-            Fujitsu,
-            Holtek,
-            Microchip,
-            Nordic,
-            Nuvoton,
-            NXP,
-            SiliconLabs,
-            Spansion,
-            STMicro,
-            Toshiba,
-            SiFive,
-            TexasInstruments,
-            Espressif,
-        ]
+impl Group {
+    pub fn all() -> HashSet<Self> {
+        Self::iter().collect()
+    }
+
+    pub fn name_in_cmsis_svd_repo(&self) -> Option<NameInCmsisSvdRepo> {
+        if *self == Group::Unknown {
+            return None;
+        }
+        Some(match self {
+            Group::Atmel => NameInCmsisSvdRepo::Atmel,
+            Group::Freescale => NameInCmsisSvdRepo::Freescale,
+            Group::Fujitsu => NameInCmsisSvdRepo::Fujitsu,
+            Group::FujitsuMB9AF1 => NameInCmsisSvdRepo::Fujitsu,
+            Group::FujitsuMB9AF3 => NameInCmsisSvdRepo::Fujitsu,
+            Group::FujitsuMB9AF4 => NameInCmsisSvdRepo::Fujitsu,
+            Group::FujitsuMB9AFA => NameInCmsisSvdRepo::Fujitsu,
+            Group::FujitsuMB9AFB => NameInCmsisSvdRepo::Fujitsu,
+            Group::FujitsuMB9BF1 => NameInCmsisSvdRepo::Fujitsu,
+            Group::FujitsuMB9BF2 => NameInCmsisSvdRepo::Fujitsu,
+            Group::FujitsuMB9BF3 => NameInCmsisSvdRepo::Fujitsu,
+            Group::FujitsuMB9B => NameInCmsisSvdRepo::Fujitsu,
+            Group::FujitsuMB9BF4 => NameInCmsisSvdRepo::Fujitsu,
+            Group::FujitsuMB9BF5 => NameInCmsisSvdRepo::Fujitsu,
+            Group::FujitsuMB9BF6 => NameInCmsisSvdRepo::Fujitsu,
+            Group::FujitsuMB9BFD => NameInCmsisSvdRepo::Fujitsu,
+            Group::Holtek => NameInCmsisSvdRepo::Holtek,
+            Group::Microchip => NameInCmsisSvdRepo::Microchip,
+            Group::Nordic => NameInCmsisSvdRepo::Nordic,
+            Group::Nuvoton => NameInCmsisSvdRepo::Nuvoton,
+            Group::NXP => NameInCmsisSvdRepo::NXP,
+            Group::SiliconLabs => NameInCmsisSvdRepo::SiliconLabs,
+            Group::Spansion => NameInCmsisSvdRepo::Spansion,
+            Group::STMicroF0 => NameInCmsisSvdRepo::STMicro,
+            Group::STMicroF1 => NameInCmsisSvdRepo::STMicro,
+            Group::STMicroF2 => NameInCmsisSvdRepo::STMicro,
+            Group::STMicroF3 => NameInCmsisSvdRepo::STMicro,
+            Group::STMicroF4 => NameInCmsisSvdRepo::STMicro,
+            Group::STMicro => NameInCmsisSvdRepo::STMicro,
+            Group::Toshiba => NameInCmsisSvdRepo::Toshiba,
+            Group::SiFive => NameInCmsisSvdRepo::Toshiba,
+            Group::TexasInstruments => NameInCmsisSvdRepo::TexasInstruments,
+            Group::Espressif => NameInCmsisSvdRepo::Espressif,
+            Group::Unknown => panic!("unhandled group {:?}", self),
+        })
     }
 }
 
-impl std::fmt::Display for Manufacturer {
+impl std::fmt::Display for Group {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.serialize(f)
     }
@@ -69,7 +146,7 @@ pub enum RunWhen {
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
 pub struct TestCase {
     pub arch: Target,
-    pub mfgr: Manufacturer,
+    pub group: Group,
     pub chip: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub suffix: Option<String>,
@@ -93,10 +170,14 @@ impl TestCase {
     pub fn svd_url(&self) -> String {
         match &self.svd_url {
             Some(u) => u.to_owned(),
-            None => format!("https://raw.githubusercontent.com/cmsis-svd/cmsis-svd-data/main/data/{vendor:?}/{chip}.svd",
-                  vendor = self.mfgr,
-                  chip = self.chip
+            None => {
+                format!("https://raw.githubusercontent.com/cmsis-svd/cmsis-svd-data/main/data/{vendor:?}/{chip}.svd",
+                vendor = self.group.name_in_cmsis_svd_repo().expect(
+                    &format!("could not find a vendor in CMSIS SVD repo for group {:?}", self.group)
+                ),
+                chip = self.chip
             )
+            }
         }
     }
 
@@ -109,7 +190,7 @@ impl TestCase {
     }
 
     pub fn name(&self) -> String {
-        let mut base_name = format!("{:?}-{}", self.mfgr, self.chip.replace('.', "_"));
+        let mut base_name = format!("{:?}-{}", self.group, self.chip.replace('.', "_"));
         if let Some(suffix) = &self.suffix {
             base_name.push('-');
             base_name.push_str(suffix);

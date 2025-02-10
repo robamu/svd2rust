@@ -31,15 +31,16 @@ pub struct Diffing {
     #[clap(global = true, long, short = 'c')]
     pub chip: Vec<String>,
 
-    /// Filter by manufacturer, case sensitive, may be combined with other filters
+    /// Filter by groups, case sensitive, may be combined with other filters. A group can be
+    /// a single manufacturer or a certain device family of a manufacturer.
     #[clap(
             global = true,
-            short = 'm',
-            long = "manufacturer",
+            short = 'g',
+            long = "group",
             ignore_case = true,
-            value_parser = crate::manufacturers(),
+            value_parser = crate::groups(),
         )]
-    pub mfgr: Option<String>,
+    pub group: Option<String>,
 
     /// Filter by architecture, case sensitive, may be combined with other filters
     #[clap(
@@ -166,9 +167,9 @@ impl Diffing {
             })
             // selected manufacturer?
             .filter(|t| {
-                if let Some(ref mfgr) = self.mfgr {
-                    mfgr.to_ascii_lowercase()
-                        .eq_ignore_ascii_case(&t.mfgr.to_string().to_ascii_lowercase())
+                if let Some(ref group) = self.group {
+                    group.to_ascii_lowercase()
+                        .eq_ignore_ascii_case(&t.group.to_string().to_ascii_lowercase())
                 } else {
                     true
                 }
@@ -199,7 +200,7 @@ impl Diffing {
                     .map(|s| svd2rust::Target::parse(&s))
                     .transpose()?
                     .unwrap_or_default(),
-                mfgr: crate::tests::Manufacturer::Unknown,
+                group: crate::tests::Group::Unknown,
                 chip: url
                     .rsplit('/')
                     .next()
