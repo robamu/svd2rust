@@ -689,3 +689,11 @@
   group: Espressif
   chip: esp32c3
   svd_url: https://raw.githubusercontent.com/espressif/svd/main/svd/esp32c3.svd
+
+# Raspberry Pi
+- arch: cortex-m
+  group: RaspberryPi
+  chip: rp2040
+- arch: cortex-m
+  group: RaspberryPi
+  chip: rp2350

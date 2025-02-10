@@ -54,6 +54,7 @@ pub enum Group {
     SiFive,
     TexasInstruments,
     Espressif,
+    RaspberryPi,
     Unknown,
 }
 
@@ -75,6 +76,7 @@ pub enum NameInCmsisSvdRepo {
     SiFive,
     TexasInstruments,
     Espressif,
+    RaspberryPi,
     Unknown,
 }
 
@@ -105,6 +107,7 @@ impl Group {
             Group::FujitsuMB9BF6 => NameInCmsisSvdRepo::Fujitsu,
             Group::FujitsuMB9BFD => NameInCmsisSvdRepo::Fujitsu,
             Group::Holtek => NameInCmsisSvdRepo::Holtek,
+            Group::RaspberryPi => NameInCmsisSvdRepo::RaspberryPi,
             Group::Microchip => NameInCmsisSvdRepo::Microchip,
             Group::Nordic => NameInCmsisSvdRepo::Nordic,
             Group::Nuvoton => NameInCmsisSvdRepo::Nuvoton,
