@@ -60,6 +60,14 @@ pub struct TestAll {
     #[clap(short = 'c', long)]
     pub chip: Vec<String>,
 
+    /// Filter by vendor / manufacturer
+    #[clap(
+        long = "vendor",
+        ignore_case = true,
+        value_parser = vendors(),
+    )]
+    pub vendor: Option<String>,
+
     /// Filter by group, which may be a manufacturer or a device family provided by a manufacturer.
     /// May be combined with other filters
     #[clap(
@@ -212,11 +220,26 @@ impl TestAll {
                     true
                 }
             })
-            // selected manufacturer?
+            // selected group?
             .filter(|t| {
                 if let Some(ref group) = self.group {
-                    group.to_ascii_lowercase()
+                    group
+                        .to_ascii_lowercase()
                         .eq_ignore_ascii_case(&t.group.to_string().to_ascii_lowercase())
+                } else {
+                    true
+                }
+            })
+            // selected vendor?
+            .filter(|t| {
+                if let Some(ref vendor) = self.vendor {
+                    vendor.to_ascii_lowercase().eq_ignore_ascii_case(
+                        &t.group
+                            .vendor()
+                            .unwrap_or_else(|| panic!("no vendor found for group {}", t.group))
+                            .to_string()
+                            .to_ascii_lowercase(),
+                    )
                 } else {
                     true
                 }
@@ -403,10 +426,17 @@ fn architectures() -> Vec<clap::builder::PossibleValue> {
         .collect()
 }
 
+fn vendors() -> Vec<clap::builder::PossibleValue> {
+    tests::Vendor::all()
+        .iter()
+        .map(|vendor| clap::builder::PossibleValue::new(vendor.to_string()))
+        .collect()
+}
+
 fn groups() -> Vec<clap::builder::PossibleValue> {
     tests::Group::all()
         .iter()
-        .map(|mfgr| clap::builder::PossibleValue::new(mfgr.to_string()))
+        .map(|group| clap::builder::PossibleValue::new(group.to_string()))
         .collect()
 }
 

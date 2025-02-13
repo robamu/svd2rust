@@ -57,39 +57,57 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { vendor: Atmel }
-          - { vendor: Atmel, options: "-- --strict --atomics" }
-          - { vendor: Freescale }
-          - { vendor: Freescale, options: "-- --strict --atomics" }
-          - { vendor: Fujitsu }
-          - { vendor: Fujitsu, options: "-- --atomics" }
-          - { vendor: Holtek }
-          - { vendor: Holtek, options: "-- --strict --atomics" }
-          - { vendor: Atmel }
-          - { vendor: Atmel, options: "-- --strict --atomics" }
-          - { vendor: Microchip }
-          - { vendor: Microchip, options: "-- --atomics" }
-          - { vendor: Nordic }
-          - { vendor: Nordic, options: "-- --strict --atomics" }
-          - { vendor: Nuvoton }
-          - { vendor: Nuvoton, options: "-- --atomics" }
-          - { vendor: NXP }
-          - { vendor: NXP, options: "-- --strict --atomics" }
-          - { vendor: SiFive }
-          - { vendor: SiFive, options: "-- --atomics" }
-          - { vendor: SiliconLabs, options: "" }
-          - { vendor: SiliconLabs, options: "-- --strict --atomics" }
-          - { vendor: Spansion }
-          - { vendor: Spansion, options: "-- --atomics" }
-          - { vendor: STMicro }
-          - { vendor: STMicro, options: "-- --atomics" }
-          - { vendor: STMicro, options: "-- --strict -f enum_value::p: --max-cluster-size --atomics --atomics-feature atomics --impl-debug --impl-defmt defmt" }
-          - { vendor: Toshiba }
-          - { vendor: Toshiba, options: "-- --strict --atomics" }
-          - { vendor: TexasInstruments }
-          - { vendor: TexasInstruments, options: "-- --atomics" }
-          - { vendor: Espressif }
-          - { vendor: Espressif, options: "-- --atomics" }
+          - { group: Atmel }
+          - { group: Atmel, options: "-- --strict --atomics" }
+          - { group: Freescale }
+          - { group: Freescale, options: "-- --strict --atomics" }
+          - { group: Fujitsu }
+          - { group: FujitsuMB9AF1 }
+          - { group: FujitsuMB9AF1, options: "-- --atomics" }
+          - { group: FujitsuMB9AF3 }
+          - { group: FujitsuMB9AF4 }
+          - { group: FujitsuMB9AFA }
+          - { group: FujitsuMB9AFB }
+          - { group: FujitsuMB9B }
+          - { group: FujitsuMB9BF1 }
+          - { group: FujitsuMB9BF2 }
+          - { group: FujitsuMB9BF3 }
+          - { group: FujitsuMB9BF4 }
+          - { group: FujitsuMB9BF5 }
+          - { group: FujitsuMB9BF6 }
+          - { group: FujitsuMB9BFD }
+          - { group: Holtek }
+          - { group: Holtek, options: "-- --strict --atomics" }
+          - { group: Atmel }
+          - { group: Atmel, options: "-- --strict --atomics" }
+          - { group: Microchip }
+          - { group: Microchip, options: "-- --atomics" }
+          - { group: Nordic }
+          - { group: Nordic, options: "-- --strict --atomics" }
+          - { group: Nuvoton }
+          - { group: Nuvoton, options: "-- --atomics" }
+          - { group: NXP }
+          - { group: NXP, options: "-- --strict --atomics" }
+          - { group: SiFive }
+          - { group: SiFive, options: "-- --atomics" }
+          - { group: SiliconLabs, options: "" }
+          - { group: SiliconLabs, options: "-- --strict --atomics" }
+          - { group: Spansion }
+          - { group: Spansion, options: "-- --atomics" }
+          - { group: STMicro }
+          - { group: STMicro, options: "-- --atomics" }
+          - { group: STMicro, options: "-- --strict -f enum_value::p: --max-cluster-size --atomics --atomics-feature atomics --impl-debug --impl-defmt defmt" }
+          - { group: STMicroF0 }
+          - { group: STMicroF1 }
+          - { group: STMicroF2 }
+          - { group: STMicroF3 }
+          - { group: STMicroF4 }
+          - { group: Toshiba }
+          - { group: Toshiba, options: "-- --strict --atomics" }
+          - { group: TexasInstruments }
+          - { group: TexasInstruments, options: "-- --atomics" }
+          - { group: Espressif }
+          - { group: Espressif, options: "-- --atomics" }
 
     steps:
       - uses: actions/checkout@v4
@@ -104,7 +122,7 @@ jobs:
           cargo install svd2rust --path .
 
       - name: Run regression tool
-        run: cargo regress tests -m ${{ matrix.vendor }} ${{ matrix.options }}
+        run: cargo regress tests -g ${{ matrix.group }} ${{ matrix.options }}
 
   ci-msrv-check:
     runs-on: ubuntu-latest

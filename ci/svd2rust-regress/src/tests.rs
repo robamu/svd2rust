@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, fmt::Debug};
 
 use self::RunWhen::*;
 use anyhow::Context;
@@ -57,9 +57,80 @@ pub enum Group {
     Unknown,
 }
 
+impl Group {
+    pub fn all() -> HashSet<Self> {
+        Self::iter().collect()
+    }
+
+    pub fn name_in_cmsis_svd_repo_as_str(&self) -> Option<String> {
+        // By default, use the enum value as a string. In case we have a missmatch
+        // between the name in the SVD repo and the vendor name, those cases could be handled
+        // explicitely in the future.
+        self.vendor().map(|vendor| vendor.to_string())
+    }
+
+    pub fn vendor(&self) -> Option<Vendor> {
+        if *self == Group::Unknown {
+            return None;
+        }
+        Some(match self {
+            Group::Atmel => Vendor::Atmel,
+            Group::Freescale => Vendor::Freescale,
+            Group::Fujitsu => Vendor::Fujitsu,
+            Group::FujitsuMB9AF1 => Vendor::Fujitsu,
+            Group::FujitsuMB9AF3 => Vendor::Fujitsu,
+            Group::FujitsuMB9AF4 => Vendor::Fujitsu,
+            Group::FujitsuMB9AFA => Vendor::Fujitsu,
+            Group::FujitsuMB9AFB => Vendor::Fujitsu,
+            Group::FujitsuMB9BF1 => Vendor::Fujitsu,
+            Group::FujitsuMB9BF2 => Vendor::Fujitsu,
+            Group::FujitsuMB9BF3 => Vendor::Fujitsu,
+            Group::FujitsuMB9B => Vendor::Fujitsu,
+            Group::FujitsuMB9BF4 => Vendor::Fujitsu,
+            Group::FujitsuMB9BF5 => Vendor::Fujitsu,
+            Group::FujitsuMB9BF6 => Vendor::Fujitsu,
+            Group::FujitsuMB9BFD => Vendor::Fujitsu,
+            Group::Holtek => Vendor::Holtek,
+            Group::Microchip => Vendor::Microchip,
+            Group::Nordic => Vendor::Nordic,
+            Group::Nuvoton => Vendor::Nuvoton,
+            Group::NXP => Vendor::NXP,
+            Group::SiliconLabs => Vendor::SiliconLabs,
+            Group::Spansion => Vendor::Spansion,
+            Group::STMicroF0 => Vendor::STMicro,
+            Group::STMicroF1 => Vendor::STMicro,
+            Group::STMicroF2 => Vendor::STMicro,
+            Group::STMicroF3 => Vendor::STMicro,
+            Group::STMicroF4 => Vendor::STMicro,
+            Group::STMicro => Vendor::STMicro,
+            Group::Toshiba => Vendor::Toshiba,
+            Group::SiFive => Vendor::Toshiba,
+            Group::TexasInstruments => Vendor::TexasInstruments,
+            Group::Espressif => Vendor::Espressif,
+            Group::Unknown => panic!("unhandled group {:?}", self),
+        })
+    }
+}
+
+impl std::fmt::Display for Group {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.serialize(f)
+    }
+}
+
 #[allow(clippy::upper_case_acronyms)]
-#[derive(Debug, serde::Serialize, serde::Deserialize, PartialEq, Eq, Clone, Copy)]
-pub enum NameInCmsisSvdRepo {
+#[derive(
+    Debug,
+    serde::Serialize,
+    serde::Deserialize,
+    PartialEq,
+    Eq,
+    Clone,
+    Copy,
+    Hash,
+    strum_macros::EnumIter,
+)]
+pub enum Vendor {
     Atmel,
     Freescale,
     Fujitsu,
@@ -78,57 +149,14 @@ pub enum NameInCmsisSvdRepo {
     Unknown,
 }
 
-impl Group {
-    pub fn all() -> HashSet<Self> {
-        Self::iter().collect()
-    }
-
-    pub fn name_in_cmsis_svd_repo(&self) -> Option<NameInCmsisSvdRepo> {
-        if *self == Group::Unknown {
-            return None;
-        }
-        Some(match self {
-            Group::Atmel => NameInCmsisSvdRepo::Atmel,
-            Group::Freescale => NameInCmsisSvdRepo::Freescale,
-            Group::Fujitsu => NameInCmsisSvdRepo::Fujitsu,
-            Group::FujitsuMB9AF1 => NameInCmsisSvdRepo::Fujitsu,
-            Group::FujitsuMB9AF3 => NameInCmsisSvdRepo::Fujitsu,
-            Group::FujitsuMB9AF4 => NameInCmsisSvdRepo::Fujitsu,
-            Group::FujitsuMB9AFA => NameInCmsisSvdRepo::Fujitsu,
-            Group::FujitsuMB9AFB => NameInCmsisSvdRepo::Fujitsu,
-            Group::FujitsuMB9BF1 => NameInCmsisSvdRepo::Fujitsu,
-            Group::FujitsuMB9BF2 => NameInCmsisSvdRepo::Fujitsu,
-            Group::FujitsuMB9BF3 => NameInCmsisSvdRepo::Fujitsu,
-            Group::FujitsuMB9B => NameInCmsisSvdRepo::Fujitsu,
-            Group::FujitsuMB9BF4 => NameInCmsisSvdRepo::Fujitsu,
-            Group::FujitsuMB9BF5 => NameInCmsisSvdRepo::Fujitsu,
-            Group::FujitsuMB9BF6 => NameInCmsisSvdRepo::Fujitsu,
-            Group::FujitsuMB9BFD => NameInCmsisSvdRepo::Fujitsu,
-            Group::Holtek => NameInCmsisSvdRepo::Holtek,
-            Group::Microchip => NameInCmsisSvdRepo::Microchip,
-            Group::Nordic => NameInCmsisSvdRepo::Nordic,
-            Group::Nuvoton => NameInCmsisSvdRepo::Nuvoton,
-            Group::NXP => NameInCmsisSvdRepo::NXP,
-            Group::SiliconLabs => NameInCmsisSvdRepo::SiliconLabs,
-            Group::Spansion => NameInCmsisSvdRepo::Spansion,
-            Group::STMicroF0 => NameInCmsisSvdRepo::STMicro,
-            Group::STMicroF1 => NameInCmsisSvdRepo::STMicro,
-            Group::STMicroF2 => NameInCmsisSvdRepo::STMicro,
-            Group::STMicroF3 => NameInCmsisSvdRepo::STMicro,
-            Group::STMicroF4 => NameInCmsisSvdRepo::STMicro,
-            Group::STMicro => NameInCmsisSvdRepo::STMicro,
-            Group::Toshiba => NameInCmsisSvdRepo::Toshiba,
-            Group::SiFive => NameInCmsisSvdRepo::Toshiba,
-            Group::TexasInstruments => NameInCmsisSvdRepo::TexasInstruments,
-            Group::Espressif => NameInCmsisSvdRepo::Espressif,
-            Group::Unknown => panic!("unhandled group {:?}", self),
-        })
-    }
-}
-
-impl std::fmt::Display for Group {
+impl std::fmt::Display for Vendor {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.serialize(f)
+    }
+}
+impl Vendor {
+    pub fn all() -> HashSet<Self> {
+        Self::iter().collect()
     }
 }
 
@@ -171,12 +199,18 @@ impl TestCase {
         match &self.svd_url {
             Some(u) => u.to_owned(),
             None => {
-                format!("https://raw.githubusercontent.com/cmsis-svd/cmsis-svd-data/main/data/{vendor:?}/{chip}.svd",
-                vendor = self.group.name_in_cmsis_svd_repo().expect(
-                    &format!("could not find a vendor in CMSIS SVD repo for group {:?}", self.group)
-                ),
-                chip = self.chip
-            )
+                let vendor_str = self
+                    .group
+                    .name_in_cmsis_svd_repo_as_str()
+                    .unwrap_or_else(|| {
+                        panic!(
+                            "could not find a vendor in CMSIS SVD repo for group {:?}",
+                            self.group
+                        )
+                    });
+                format!("https://raw.githubusercontent.com/cmsis-svd/cmsis-svd-data/main/data/{vendor_str}/{chip}.svd",
+                    chip = self.chip
+                )
             }
         }
     }
