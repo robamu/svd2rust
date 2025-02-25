@@ -6,6 +6,7 @@ use svd2rust::util::IdentFormat;
 
 use std::io::Write;
 use std::process;
+use std::str::FromStr;
 use std::{fs::File, path::Path};
 
 use anyhow::{Context, Result};
@@ -110,8 +111,12 @@ fn run() -> Result<()> {
         .arg(
             Arg::new("target")
                 .long("target")
-                .help("Target architecture")
+                .help(
+                    "Target architecture"
+                )
                 .action(ArgAction::Set)
+                .value_parser(Target::from_str)
+                .help(format!("possible values: {}", Target::variants_list().join(", ")))
                 .value_name("ARCH"),
         )
         .arg(

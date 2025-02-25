@@ -55,7 +55,7 @@ impl Config {
 #[allow(clippy::upper_case_acronyms)]
 #[allow(non_camel_case_types)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default, clap::ValueEnum)]
 pub enum Target {
     #[cfg_attr(feature = "serde", serde(rename = "cortex-m"))]
     #[default]
@@ -74,18 +74,30 @@ pub enum Target {
 
 impl std::fmt::Display for Target {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(match self {
+        f.write_str(self.as_str())
+    }
+}
+
+impl FromStr for Target {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::parse(s)
+    }
+}
+
+impl Target {
+    pub const fn as_str(&self) -> &'static str {
+        match self {
             Target::CortexM => "cortex-m",
             Target::Msp430 => "msp430",
             Target::RISCV => "riscv",
             Target::XtensaLX => "xtensa-lx",
             Target::Mips => "mips",
             Target::None => "none",
-        })
+        }
     }
-}
 
-impl Target {
     pub fn parse(s: &str) -> Result<Self> {
         Ok(match s {
             "cortex-m" => Target::CortexM,
@@ -100,7 +112,11 @@ impl Target {
 
     pub const fn all() -> &'static [Target] {
         use self::Target::*;
-        &[CortexM, Msp430, RISCV, XtensaLX, Mips]
+        &[CortexM, Msp430, RISCV, XtensaLX, Mips, None]
+    }
+
+    pub fn variants_list() -> Vec<String> {
+        Self::all().iter().map(|v| v.to_string()).collect()
     }
 }
 
